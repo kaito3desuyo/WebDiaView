@@ -15,18 +15,61 @@ function load_oud_file($filename){
 	//	return $param !== ".";
 	//});
 	$content = array_values($content);//配列の番号を振り直し
+	$count = count($content);
+	
 	
 	$oudArray = array();
 	
+	//先に設定情報だけを取得
+	for($i = 0; $i < $count; $i++){
+		if($content[$i] === "DispProp."){
+			
+			//設定情報
+			$k = 1;
+			while($content[$i + $k] !== "."){
+				$tmp = explode("=", $content[$i + $k]);
+				$param = ConfigData_param($tmp[0]);
+				$value = ConfigData_value($tmp[1]);
+				if($tmp[0] === "JikokuhyouFont"){
+					$font1 = explode(";", $tmp[2]);
+					$font2 = explode(";", $tmp[3]);
+					if(empty($tmp[4])){
+						$tmp[4] = ";";
+					}
+					$font3 = explode(";", $tmp[4]);
+					
+					if(empty($font2[1])){
+						$font2[1] = null;
+					}
+					if(empty($font3[1])){
+						$font3[1] = null;
+					}
+					
+					$value = array("font-size" => $font1[0], "font-name" => $font2[0], "font-type" => $font2[1].$font3[1]);
+				}
+				$oudArray["ConfigData"][$param][] = $value;
+				unset($tmp);
+				unset($font1);
+				unset($font2);
+				unset($font3);
+				$k++;
+			}
+
+		}
+	}
+	
+	//路線・駅・列車情報の取得
 	$Stanum = 0;
 	$TrainTypenum = 0;
-	
-	for($i = 0; $i < count($content); $i++)
+	for($i = 0; $i < $count; $i++)
 	{
+				
+		
 		if($content[$i] === "Rosen."){
 			//路線情報
 			$RouteName = explode("=", $content[$i + 1]);
 			$oudArray["RouteData"]["Name"] = $RouteName[1];
+			unset($RouteName);
 		}
 		
 		if($content[$i] === "Eki."){
@@ -38,6 +81,9 @@ function load_oud_file($filename){
 				$param = StaData_param($tmp[0]);
 				$value = StaData_value($tmp[1]);
 				$oudArray["StaData"][$Stanum][$param] = $value;
+				unset($tmp);
+				unset($param);
+				unset($value);
 				$k++;
 			}
 			$Stanum++;
@@ -57,9 +103,14 @@ function load_oud_file($filename){
 					$value = array("font-size" => $font1[0], "font-name" => $font2[0], "font-type" => $font2[1]);
 				}
 				$oudArray["TrainTypeData"][$TrainTypenum][$param] = $value;
+				unset($tmp);
+				unset($param);
+				unset($value);
+				unset($font1);
+				unset($font2);
 				$k++;
 			}
-			//略称が存在しなければ、フルネームを代入する
+			//略称が存在しなければ、フルネームを代入する。
 			if(empty($oudArray["TrainTypeData"][$TrainTypenum]["shortname"])){
 				$oudArray["TrainTypeData"][$TrainTypenum]["shortname"] = $oudArray["TrainTypeData"][$TrainTypenum]["fullname"];
 			}
@@ -77,14 +128,16 @@ function load_oud_file($filename){
 			$direction = null;
 			$directionbefore = null;
 			while($content[$k] !== "Dia." and $content[$k] !== "DispProp."){
-
+			
 				if($content[$k] === "Ressya."){
-				
+									
 					$j = $k + 1;
 					while($content[$j] !== "."){
+						
 						$tmp = explode("=", $content[$j]);
 						$param = DiaData_param($tmp[0]);
 						$value = DiaData_value($tmp[1]);
+						unset($tmp);
 						
 						$directionbefore = $direction;//方向データを記憶しておく
 						
@@ -101,12 +154,59 @@ function load_oud_file($filename){
 						if($param === "time"){
 							$time = explode(",", $value);
 							for($row = 0; $row < count($time); $row++){
+								//時刻
 								$time[$row] = explode(";", $time[$row]);
+								if(empty($time[$row][1])){
+									$time[$row][1] = null;
+								}
+								$time[$row] = array("stop" => $time[$row][0], "value" => $time[$row][1]);
+								
+								//着発で分ける
+								if(preg_match("/\//", $time[$row]["value"])){
+									//"/"がある場合
+									$time[$row]["value"] = explode("/", $time[$row]["value"]);
+									if(empty($time[$row]["value"][1])){
+										$time[$row]["value"][1] = "";
+									}
+									$time[$row]["value"] = array("Arr" => $time[$row]["value"][0], "Dep" => $time[$row]["value"][1]);
+								}else{
+									//"/"がない場合
+									$time[$row]["value"] = array("Arr" => "", "Dep" => $time[$row]["value"]);
+								}
+								
+								//特定種別の時だけ全角数字にする（DiaProモード専用）
+								$Classnum = $oudArray["DiaData"][$DiaName[1]][$direction][$Dianum]["traintype"];//種別No.問い合わせ
+								if(isset($oudArray["TrainTypeData"][$Classnum]["font"])){
+									$fontnum = $oudArray["TrainTypeData"][$Classnum]["font"];//フォントNo.問い合わせ
+								
+									if($oudArray["ConfigData"]["font"][$fontnum]["font-type"] === "Bold" or $oudArray["ConfigData"]["font"][$fontnum]["font-type"] === "BoldItalic"){
+										if(!empty($time[$row]["value"]["Dep"])){
+											$time[$row]["value"]["Dep"] =  mb_convert_kana($time[$row]["value"]["Dep"], "N");
+										}
+										if(!empty($time[$row]["value"]["Arr"])){
+											$time[$row]["value"]["Arr"] =  mb_convert_kana($time[$row]["value"]["Arr"], "N");
+										}
+									}
+								}
+								
+								//3ケタの場合は頭に空白をつける
+								if(mb_strlen($time[$row]["value"]["Arr"], "UTF-8") === 3){
+									$time[$row]["value"]["Arr"] = "&#45;".$time[$row]["value"]["Arr"];
+								}
+								if(mb_strlen($time[$row]["value"]["Dep"], "UTF-8") === 3){
+									$time[$row]["value"]["Dep"] = "&#45;".$time[$row]["value"]["Dep"];
+								}
+								
 							}
+							
 							$value = $time;
+							unset($time);
 						}
 						$oudArray["DiaData"][$DiaName[1]][$direction][$Dianum][$param] = $value;
 						$j++;
+						unset($param);
+						unset($value);
+						
 					}
 					//号数が存在しなければ、nullを代入する。存在していれば後ろに「号」を付ける
 					if(empty($oudArray["DiaData"][$DiaName[1]][$direction][$Dianum]["Gousuu"])){
@@ -114,14 +214,23 @@ function load_oud_file($filename){
 					}else{
 						$oudArray["DiaData"][$DiaName[1]][$direction][$Dianum]["Gousuu"] .= "号";
 					}
+					
 					$Dianum++;
 				}
 				$k++;
+				//echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
 			}
 			
 		}
 		
 	}
+	echo memory_get_usage(true);
+	unset($i);
+	unset($k);
+	unset($Stanum);
+	unset($TrainTypenum);
+	unset($Dianum);
+	unset($row);
 
 	return $oudArray;
 }
@@ -129,45 +238,199 @@ function load_oud_file($filename){
 function select_dia_table($filename, $day, $direction){
 	$data = load_oud_file($filename);
 	
+	if($direction === "上り"){
+		$data["StaData"] = array_reverse($data["StaData"]);
+	}
+	
 	$ret["RouteData"] = $data["RouteData"];
 	$ret["StaData"] = $data["StaData"];
 	$ret["TrainTypeData"] = $data["TrainTypeData"];
 	$ret["DiaData"] = $data["DiaData"][$day][$direction];
+	$ret["ConfigData"] = $data["ConfigData"];
 	
 	return $ret;
 }
 
-function create_dia_table($filename, $day, $direction){
+function create_dia_table($filename, $day, $direction, $startcol, $endcol){
+
 	$data = load_oud_file($filename);
+	
+	
+	if($direction === "上り"){
+		$data["StaData"] = array_reverse($data["StaData"]);
+	}
 	
 	$ret["RouteData"] = $data["RouteData"];
 	$ret["StaData"] = $data["StaData"];
 	$ret["TrainTypeData"] = $data["TrainTypeData"];
 	$ret["DiaData"] = $data["DiaData"][$day][$direction];
 	
+	unset($data);
+	
+	//カラム数の設定
+	if($endcol === "max"){
+		$endcol = count($ret["DiaData"]);
+	}elseif($endcol > count($ret["DiaData"])){
+		$endcol = count($ret["DiaData"]);
+	}
+	
 ?>
-	<table>
+	<table class="oud_to_Timetable">
 		<tr>
-			<td>列車番号</td>
-			<?php foreach($ret["DiaData"] as $value): ?>
-			<td><?=$value["trainnumber"]?></td>
-			<?php endforeach; ?>
+			<td colspan="2">列車番号</td>
+			<?php for($i = $startcol; $i < $endcol; $i++): ?>
+			<td class="tnum" style="color:<?=$ret["TrainTypeData"][$ret["DiaData"][$i]["traintype"]]["textcolor"]?>"><?=$ret["DiaData"][$i]["trainnumber"]?></td>
+			<?php endfor; ?>
 		</tr>
 		<tr>
-			<td>列車種別</td>
-			<?php foreach($ret["DiaData"] as $value): ?>
-			<td><?=$ret["TrainTypeData"][$value["traintype"]]["shortname"]?></td>
-			<?php endforeach; ?>
+			<td colspan="2">列車種別</td>
+			<?php for($i = $startcol; $i < $endcol; $i++): ?>
+			<td class="ttype" style="color:<?=$ret["TrainTypeData"][$ret["DiaData"][$i]["traintype"]]["textcolor"]?>"><?=$ret["TrainTypeData"][$ret["DiaData"][$i]["traintype"]]["shortname"]?></td>
+			<?php endfor; ?>
 		</tr>
 		<tr>
-			<td>列車名</td>
-			<?php foreach($ret["DiaData"] as $value): ?>
-			<td><?=$value["trainname"]?><?=$value["Gousuu"]?></td>
-			<?php endforeach; ?>
+			<td colspan="2">列車名</td>
+			<?php for($i = $startcol; $i < $endcol; $i++): ?>
+			<td class="tname" style="color:<?=$ret["TrainTypeData"][$ret["DiaData"][$i]["traintype"]]["textcolor"]?>">
+				<?php 
+					$output = $ret["DiaData"][$i]["trainname"].$ret["DiaData"][$i]["Gousuu"];
+					foreach(preg_split("//u", $output, -1, PREG_SPLIT_NO_EMPTY) as $value){
+						echo $value."<br>";
+					}
+				?>	
+			</td>
+			<?php endfor; ?>
 		</tr>
+		
+		<?php for($i = 0; $i < count($ret["StaData"]); $i++): ?>
+		
+		<?php if($ret["StaData"][$i]["type"] === "DepArr" or ($ret["StaData"][$i]["type"] === "UpArr" and $direction === "上り") or ($ret["StaData"][$i]["type"] === "DownArr" and $direction === "下り")): ?>
+		<!-- 着時刻カラム -->
+		<tr>
+			<?php if($ret["StaData"][$i]["type"] === "DepArr"): ?>
+			<td class="sname" rowspan="2"><?=$ret["StaData"][$i]["name"]?></td>
+			<?php else: ?>
+			<td class="sname"><?=$ret["StaData"][$i]["name"]?></td>
+			<?php endif; ?>
+			
+			<td class="stype" style="border-bottom:1px solid #000;">着</td>
+			
+			<?php for($j = $startcol; $j < $endcol; $j++): ?>
+			<td class="stime" style="border-bottom:1px solid #000; color:<?=$ret["TrainTypeData"][$ret["DiaData"][$j]["traintype"]]["textcolor"]?>">
+			<?php //通過・経由なし・時刻なし
+			switch(true){
+				//運行なし
+				case empty($ret["DiaData"][$j]["time"][$i]["stop"]):
+					echo "&#x2025;";
+					break;
+				
+				//発着駅カラム：運行なし
+				case $ret["StaData"][$i]["type"] === "DepArr" 
+				and $ret["DiaData"][$j]["time"][$i]["stop"] === "1" 
+				and empty($ret["DiaData"][$j]["time"][$i]["value"]["Arr"]):
+					echo "&#x2025;";
+					break;
+				
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "1"://停車
+					echo $ret["DiaData"][$j]["time"][$i]["value"]["Arr"];
+					break;
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "2"://通過
+					echo "&#x2193;";
+					break;
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "3"://経由なし
+					echo "&#124;";
+					break;
+				default:
+					echo null;
+					break;
+			}
+			?>
+			</td>
+			
+			<?php endfor; ?>
+		</tr>
+		<?php endif; ?>
+		
+		<?php if($ret["StaData"][$i]["type"] === "DepArr" or $ret["StaData"][$i]["type"] === "DepOnly" or ($ret["StaData"][$i]["type"] === "UpArr" and $direction === "下り") or ($ret["StaData"][$i]["type"] === "DownArr" and $direction === "上り")): ?>
+		<!-- 発時刻カラム -->
+		<tr>
+			<?php if($ret["StaData"][$i]["type"] !== "DepArr"): ?>
+			<td class="sname"><?=$ret["StaData"][$i]["name"]?></td>
+			<?php endif; ?>
+			
+			<td class="stype">発</td>
+			
+			<?php for($j = $startcol; $j < $endcol; $j++): ?>
+			<td class="stime" style="color:<?=$ret["TrainTypeData"][$ret["DiaData"][$j]["traintype"]]["textcolor"]?>">
+			<?php //通過・経由なし・時刻なし
+			switch(true){
+				//終点表示
+				case $ret["StaData"][$i]["type"] === "DepOnly"//表示する駅カラムが発時刻のみで
+				and isset($ret["StaData"][$i - 1]["type"])//一個前の駅カラムにデータが存在して
+				and $ret["StaData"][$i - 1]["type"] !== "DepArr"//一個前の駅カラムが発着表示でなく
+				and empty($ret["DiaData"][$j]["time"][$i]["stop"])//表示する駅カラムが運行なしで
+				and isset($ret["DiaData"][$j]["time"][$i - 1]["stop"])//一個前の駅カラムにデータが存在して
+				and $ret["DiaData"][$j]["time"][$i - 1]["stop"] === "1"://そこに停車するとき
+					echo "&#61;";
+					break;
+				
+				//運行なし
+				case empty($ret["DiaData"][$j]["time"][$i]["stop"])://運行なし
+					echo "&#x2025;";
+					break;
+				
+				//発着駅カラム：通過
+				case $ret["StaData"][$i]["type"] === "DepArr" 
+				and $ret["DiaData"][$j]["time"][$i]["stop"] === "2"://着発駅表示・通過
+					echo "&#x2193;";
+					break;
+				//発着駅カラム：経由なし
+				case $ret["StaData"][$i]["type"] === "DepArr" 
+				and isset($ret["DiaData"][$j]["time"][$i + 1]["stop"]) 
+				and $ret["DiaData"][$j]["time"][$i + 1]["stop"] === "3"://着発駅表示・経由なし
+					echo "&#124;";
+					break;
+				//発着駅カラム：運行なし
+				case $ret["StaData"][$i]["type"] === "DepArr" 
+				and empty($ret["DiaData"][$j]["time"][$i]["value"]["Dep"])://着発駅表示・運行なし
+					echo "&#x2025;";
+					break;
+												
+				//停車駅
+				case empty($ret["DiaData"][$j]["time"][$i]["value"]["Dep"]) 
+				and $ret["DiaData"][$j]["time"][$i]["stop"] === "1"://停車（終着）
+					echo $ret["DiaData"][$j]["time"][$i]["value"]["Arr"];
+					break;
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "1"://停車
+					echo $ret["DiaData"][$j]["time"][$i]["value"]["Dep"];
+					break;
+				
+				//通過駅
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "2"://通過
+					echo "&#x2193;";
+					break;
+					
+				//経由なし
+				case $ret["DiaData"][$j]["time"][$i]["stop"] === "3"://経由なし
+					echo "&#124;";
+					break;
+					
+				default:
+					echo null;
+					break;
+			}
+			?>
+			</td>
+			
+			<?php endfor; ?>
+		</tr>
+		<?php endif; ?>
+		
+		<?php endfor; ?>
+		
 	</table>
 <?php
-
+echo memory_get_usage(true);
 }
 
 
@@ -225,6 +488,9 @@ function TrainTypeData_param($str){
 		case $str === "JikokuhyouFont":
 			return "font";
 			break;
+		case $str === "JikokuhyouFontIndex":
+			return "font";
+			break;
 		case $str === "DiagramSenColor":
 			return "linecolor";
 			break;
@@ -239,9 +505,13 @@ function TrainTypeData_param($str){
 
 function TrainTypeData_value($str){
 	switch(true){
+		//数字だけ（フォントインデックス）
+		case is_numeric($str) and strlen($str) === 1:
+			return $str;
+		
 		//種別ごとのカラー
 		case ctype_xdigit($str):
-			return "#".mb_substr($str, 2, 6, "UTF-8");
+			return "#".mb_substr($str, 6, 2, "UTF-8").mb_substr($str, 4, 2, "UTF-8").mb_substr($str, 2, 2, "UTF-8");
 			break;
 			
 		//ダイヤグラムの線種
@@ -305,11 +575,65 @@ function DiaData_value($str){
 			return "down";
 			break;
 		default:
+			return str_replace("\\", "", $str);
+			break;
+	}
+}
+
+function ConfigData_param($str){
+	switch(true){
+		case $str === "JikokuhyouFont":
+			return "font";
+			break;
+		case $str === "DiaEkimeiFont":
+			return "default_stafont";
+			break;
+		case $str === "DiaJikokuFont":
+			return "default_timefont";
+			break;
+		case $str === "DiaRessyaFont":
+			return "default_trainfont";
+			break;
+		case $str === "CommentFont":
+			return "default_commentfont";
+			break;
+		case $str === "DiaMojiColor":
+			return "default_textcolor";
+			break;
+		case $str === "DiaHaikeiColor":
+			return "default_backgroundcolor";
+			break;
+		case $str === "DiaRessyaColor":
+			return "default_traincolor";
+			break;
+		case $str === "DiaJikuColor":
+			return "default_diagrambarcolor";
+			break;
+		case $str === "EkimeiLength":
+			return "default_statextlength";
+			break;
+		case $str === "JikokuhyouRessyaWidth":
+			return "default_timetextlength";
+			break;
+	}
+}
+
+function ConfigData_value($str){
+	switch(true){
+		//数字だけ（フォントインデックス）
+		case is_numeric($str) and strlen($str) === 1:
+			return $str;
+		
+		//種別ごとのカラー
+		case ctype_xdigit($str):
+			return "#".mb_substr($str, 6, 2, "UTF-8").mb_substr($str, 4, 2, "UTF-8").mb_substr($str, 2, 2, "UTF-8");
+			break;
+		default:
 			return $str;
 			break;
 	}
 }
 
-create_dia_table("oud/kagoshimahonsen_1104.oud", "平日", "上り");
-var_dump(select_dia_table("oud/kagoshimahonsen_1104.oud", "平日", "上り")["DiaData"])
+//create_dia_table("oud/kagoshimahonsen_1104.oud", "平日", "上り");
+//var_dump(select_dia_table("oud/jr_hanwa_1101_01.oud", "平日", "上り", 0, 200)["TrainTypeData"]);
 ?>
