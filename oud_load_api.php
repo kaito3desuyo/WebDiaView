@@ -2,6 +2,183 @@
 ///////////////////////////////////
 //Oudファイルを読み込み配列の形に整理します
 ///////////////////////////////////
+function load_oud_file_new($filename){
+	$filename = mb_convert_encoding($filename, "SJIS", "UTF-8");
+	$content = file_get_contents($filename);
+	$content = mb_convert_encoding($content, "UTF-8", "SJIS");
+	
+	$content = explode("\n", $content);//改行で配列に分割する
+	$content = array_map('trim', $content);//空白削除
+	//"."だけの列を削除
+	//$content = array_filter($content, function($param){
+	//	return $param !== ".";
+	//});
+	$content = array_values($content);//配列の番号を振り直し
+	$count = count($content);//配列数取得
+	
+	$columncount = -1;
+	$dataname = null;
+	$Direction = null;
+	$oudArray = array();
+	echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	//各情報の開始行を取得する
+	$RouteRow = array_keys($content, "Rosen.");
+	$StationRow = array_keys($content, "Eki.");
+	$ClassRow = array_keys($content, "Ressyasyubetsu.");
+	$DiaRow = array_keys($content, "Dia.");
+	$TrainRow = array_keys($content, "Ressya.");
+	$ConfigRow = array_keys($content, "DispProp.");
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	foreach($ConfigRow as $i){
+		//設定情報
+		$k = 1;
+		while($content[$i + $k] !== "."){
+			$column = explode("=", $content[$i + $k]);
+			if(!isset($column[1])){
+				$column[1] = null;
+			}
+			$param = ConfigData_param($column[0]);
+			$value = ConfigData_value($column[1]);
+			if($column[0] === "JikokuhyouFont"){
+				$font1 = explode(";", $column[2]);
+				$font2 = explode(";", $column[3]);
+				if(empty($column[4])){
+					$column[4] = ";";
+				}
+				$font3 = explode(";", $column[4]);
+			
+				if(empty($font2[1])){
+					$font2[1] = null;
+				}
+				if(empty($font3[1])){
+					$font3[1] = null;
+				}
+				
+				$value = array("font-size" => $font1[0], "font-name" => $font2[0], "font-type" => $font2[1].$font3[1]);
+			}
+			$oudArray["ConfigData"][$param][] = $value;
+			unset($column);
+			unset($font1);
+			unset($font2);
+			unset($font3);
+			$k++;
+		}
+		break;
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	foreach($RouteRow as $i){
+		//路線情報
+		$RouteName = explode("=", $content[$i + 1]);
+		$oudArray["RouteData"]["Name"] = $RouteName[1];
+		unset($RouteName);
+		break;
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	$Stanum = 0;
+	foreach($StationRow as $i){
+		//駅情報
+		$k = 1;
+		while($content[$i + $k] !== "."){
+			$column = explode("=", $content[$i + $k]);
+			if(!isset($column[1])){
+				$column[1] = null;
+			}
+			$param = StaData_param($column[0]);
+			$value = StaData_value($column[1]);
+			$oudArray["StaData"][$Stanum][$param] = $value;
+			unset($column);
+			unset($param);
+			unset($value);
+			$k++;
+		}
+		$Stanum++;
+		break;
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	$TrainTypenum = 0;
+	foreach($ClassRow as $i){
+		//種別情報
+		$k = 1;
+		while($content[$i + $k] !== "."){
+			$column = explode("=", $content[$i + $k]);
+			$param = TrainTypeData_param($column[0]);
+			$value = TrainTypeData_value($column[1]);
+			if($column[0] === "JikokuhyouFont"){
+				$font1 = explode(";", $column[2]);
+				$font2 = explode(";", $column[3]);
+				$value = array("font-size" => $font1[0], "font-name" => $font2[0], "font-type" => $font2[1]);
+			}
+			$oudArray["TrainTypeData"][$TrainTypenum][$param] = $value;
+			unset($column);
+			unset($param);
+			unset($value);
+			unset($font1);
+			unset($font2);
+			$k++;
+		}
+		//略称が存在しなければ、フルネームを代入する。
+		if(empty($oudArray["TrainTypeData"][$TrainTypenum]["shortname"])){
+			$oudArray["TrainTypeData"][$TrainTypenum]["shortname"] = $oudArray["TrainTypeData"][$TrainTypenum]["fullname"];
+		}
+		
+		$TrainTypenum++;
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+
+	foreach($DiaRow as $i){
+		
+		//ダイヤ情報
+		$DiaName = explode("=", $content[$i + 1]);
+		$oudArray["DiaData"][$DiaName[1]] = array("上り" => array(), "下り" => array());
+					
+		
+		$Dianum = 0;
+		$direction = null;
+		$directionbefore = null;
+		
+		$first = $DiaRow[0];
+		$middle = $DiaRow[1];
+		$end = $TrainRow[count($TrainRow) - 1];
+		
+		echo $first.".";
+		echo $middle.".";
+		echo $end."<br>";
+		
+		if($i < $middle){
+			$checkmin = $first;
+			$checkmax = $middle;
+		}elseif($middle <= $i){
+			$checkmin = $middle;
+			$checkmax = $end;
+		}
+
+		$k = $i + 1;
+		//var_dump($TrainRow);
+		while($checkmin < $k and $k <= $checkmax){
+			
+			
+			$k++;
+		}
+		
+	}
+
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	echo "<pre>";
+	var_dump($oudArray);
+	echo "</pre>";
+	return $oudArray;
+}
+
 
 function load_oud_file($filename){
 	$filename = mb_convert_encoding($filename, "SJIS", "UTF-8");
@@ -54,26 +231,32 @@ function load_oud_file($filename){
 				unset($font3);
 				$k++;
 			}
-
+			break;
 		}
 	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	//路線・駅・列車情報の取得
 	$Stanum = 0;
 	$TrainTypenum = 0;
 	for($i = 0; $i < $count; $i++)
-	{
-				
-		
+	{		
 		if($content[$i] === "Rosen."){
 			//路線情報
 			$RouteName = explode("=", $content[$i + 1]);
 			$oudArray["RouteData"]["Name"] = $RouteName[1];
 			unset($RouteName);
+			break;
 		}
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	for($i = 0; $i < $count; $i++)
+	{
 		
 		if($content[$i] === "Eki."){
-			
 			//駅情報
 			$k = 1;
 			while($content[$i + $k] !== "."){
@@ -89,6 +272,12 @@ function load_oud_file($filename){
 			$Stanum++;
 		}
 		
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	for($i = 0; $i < $count; $i++)
+	{
 		if($content[$i] === "Ressyasyubetsu."){
 			
 			//種別情報
@@ -114,8 +303,16 @@ function load_oud_file($filename){
 			if(empty($oudArray["TrainTypeData"][$TrainTypenum]["shortname"])){
 				$oudArray["TrainTypeData"][$TrainTypenum]["shortname"] = $oudArray["TrainTypeData"][$TrainTypenum]["fullname"];
 			}
+			
 			$TrainTypenum++;
 		}
+			
+	}
+	
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	
+	for($i = 0; $i < $count; $i++)
+	{
 		
 		if($content[$i] === "Dia."){
 			
@@ -202,6 +399,7 @@ function load_oud_file($filename){
 							$value = $time;
 							unset($time);
 						}
+						
 						$oudArray["DiaData"][$DiaName[1]][$direction][$Dianum][$param] = $value;
 						$j++;
 						unset($param);
@@ -218,13 +416,13 @@ function load_oud_file($filename){
 					$Dianum++;
 				}
 				$k++;
-				//echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
+				
 			}
-			
+			break;
 		}
 		
 	}
-	echo memory_get_usage(true);
+	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	unset($i);
 	unset($k);
 	unset($Stanum);
@@ -253,7 +451,7 @@ function select_dia_table($filename, $day, $direction){
 
 function create_dia_table($filename, $day, $direction, $startcol, $endcol){
 
-	$data = load_oud_file($filename);
+	$data = load_oud_file_new($filename);
 	
 	
 	if($direction === "上り"){
@@ -322,6 +520,13 @@ function create_dia_table($filename, $day, $direction, $startcol, $endcol){
 				//運行なし
 				case empty($ret["DiaData"][$j]["time"][$i]["stop"]):
 					echo "&#x2025;";
+					break;
+				
+				//発着駅カラム：経由なし
+				case $ret["StaData"][$i]["type"] === "DepArr" 
+				and isset($ret["DiaData"][$j]["time"][$i - 1]["stop"]) 
+				and $ret["DiaData"][$j]["time"][$i - 1]["stop"] === "3"://着発駅表示・経由なし
+					echo "&#124;";
 					break;
 				
 				//発着駅カラム：運行なし
@@ -430,7 +635,175 @@ function create_dia_table($filename, $day, $direction, $startcol, $endcol){
 		
 	</table>
 <?php
-echo memory_get_usage(true);
+echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
+}
+
+function Param_convert($str){
+	switch(true){
+		//駅情報関係
+		case $str === "Ekimei":
+			return "name";
+			break;
+		case $str === "Ekijikokukeisiki":
+			return "type";
+			break;
+		case $str === "Ekikibo":
+			return "scale";
+			break;
+		//種別情報関係
+		case $str === "Syubetsumei":
+			return "fullname";
+			break;
+		case $str === "Ryakusyou":
+			return "shortname";
+			break;
+		case $str === "JikokuhyouMojiColor":
+			return "textcolor";
+			break;
+		case $str === "JikokuhyouFont":
+			return "font";
+			break;
+		case $str === "JikokuhyouFontIndex":
+			return "font";
+			break;
+		case $str === "DiagramSenColor":
+			return "linecolor";
+			break;
+		case $str === "DiagramSenStyle":
+			return "linetype";
+			break;
+		case $str === "StopMarkDrawType":
+			return "stopmark";
+			break;
+		//列車情報関係
+		case $str === "Houkou":
+			return "direction";
+			break;
+		case $str === "Syubetsu":
+			return "traintype";
+			break;
+		case $str === "Ressyabangou":
+			return "trainnumber";
+			break;
+		case $str === "Ressyamei":
+			return "trainname";
+			break;
+		case $str === "EkiJikoku":
+			return "time";
+			break;
+		case $str === "Gousuu":
+			return "Gousuu";
+			break;
+		//設定情報関係
+		case $str === "JikokuhyouFont":
+			return "font";
+			break;
+		case $str === "DiaEkimeiFont":
+			return "default_stafont";
+			break;
+		case $str === "DiaJikokuFont":
+			return "default_timefont";
+			break;
+		case $str === "DiaRessyaFont":
+			return "default_trainfont";
+			break;
+		case $str === "CommentFont":
+			return "default_commentfont";
+			break;
+		case $str === "DiaMojiColor":
+			return "default_textcolor";
+			break;
+		case $str === "DiaHaikeiColor":
+			return "default_backgroundcolor";
+			break;
+		case $str === "DiaRessyaColor":
+			return "default_traincolor";
+			break;
+		case $str === "DiaJikuColor":
+			return "default_diagrambarcolor";
+			break;
+		case $str === "EkimeiLength":
+			return "default_statextlength";
+			break;
+		case $str === "JikokuhyouRessyaWidth":
+			return "default_timetextlength";
+			break;
+	}
+}
+
+function Value_convert($str){
+	switch(true){
+		//駅情報関係
+		case $str === "Jikokukeisiki_Hatsu":
+			return "DepOnly";
+			break;
+		case $str === "Jikokukeisiki_Hatsuchaku":
+			return "DepArr";
+			break;
+		case $str === "Jikokukeisiki_NoboriChaku":
+			return "UpArr";
+			break;
+		case $str === "Jikokukeisiki_KudariChaku":
+			return "DownArr";
+			break;
+		case $str === "Ekikibo_Ippan":
+			return "Normal";
+			break;
+		case $str === "Ekikibo_Syuyou":
+			return "Main";
+			break;
+		//種別情報関係
+		//数字だけ（フォントインデックス）
+		case is_numeric($str) and strlen($str) === 1:
+			return $str;
+		
+		//種別ごとのカラー
+		case ctype_xdigit($str):
+			return "#".mb_substr($str, 6, 2, "UTF-8").mb_substr($str, 4, 2, "UTF-8").mb_substr($str, 2, 2, "UTF-8");
+			break;
+			
+		//ダイヤグラムの線種
+		case $str === "SenStyle_Jissen":
+			return "solid";
+			break;
+		case $str === "SenStyle_Hasen":
+			return "textcolor";
+			break;
+		case $str === "SenStyle_Tensen":
+			return "linecolor";
+			break;
+		case $str === "SenStyle_Ittensasen":
+			return "linetype";
+			break;
+			
+		//ダイヤグラム上に停車駅を明示
+		case $str === "EStopMarkDrawType_DrawOnStop":
+			return true;
+			break;
+		case $str === "EStopMarkDrawType_Nothing":
+			return false;
+			break;
+		//列車情報関係
+		case $str === "Nobori":
+			return "up";
+			break;
+		case $str === "Kudari":
+			return "down";
+			break;
+		//設定情報関係
+		//数字だけ（フォントインデックス）
+		case is_numeric($str) and strlen($str) === 1:
+			return $str;
+		
+		//種別ごとのカラー
+		case ctype_xdigit($str):
+			return "#".mb_substr($str, 6, 2, "UTF-8").mb_substr($str, 4, 2, "UTF-8").mb_substr($str, 2, 2, "UTF-8");
+			break;
+			
+		default:
+			return str_replace("\\", "", $str);
+			break;
+	}
 }
 
 

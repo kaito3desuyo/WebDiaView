@@ -39,7 +39,7 @@
 	
 		<h1>oudファイル読み込みスクリプト</h1>
 		
-		<?php create_dia_table("oud/jr_hanwa_1101_01.oud", "平日", "上り", 0, "max"); ?>
+		<?php load_oud_file_new("oud/meitetsu_honsen_toyokawasen_121115.oud", "平日", "上り", 0, "max"); ?>
 	
 	</body>
 </html>
