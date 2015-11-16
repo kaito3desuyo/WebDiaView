@@ -451,7 +451,7 @@ function select_dia_table($filename, $day, $direction){
 
 function create_dia_table($filename, $day, $direction, $startcol, $endcol){
 
-	$data = load_oud_file_new($filename);
+	$data = load_oud_file($filename);
 	
 	
 	if($direction === "上り"){
@@ -635,6 +635,7 @@ function create_dia_table($filename, $day, $direction, $startcol, $endcol){
 		
 	</table>
 <?php
+
 echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
 }
 
