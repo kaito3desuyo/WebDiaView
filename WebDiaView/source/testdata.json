@@ -1,0 +1,62 @@
+{
+	"DataName": "テストデータ",
+	"Version": "v0.0.1",
+	"LastUpdate": "2015/11/16",
+	"Contributor": "海都",
+	
+	"RouteConfig": {
+		"CompanyName": "テスト鉄道",
+		"Route": [
+			{
+				"RouteName": "A線",
+				"Station": [
+					{
+						"StationName": "あ駅",
+						"km": 0.0,
+						"Display": "Inbound-Arr"
+					},
+					{
+						"StationName": "い駅",
+						"km": 2.0,
+						"Display": "DepOnly"
+					},
+					{
+						"StationName": "い-2駅",
+						"km": 3.0,
+						"Display": "DepArr"
+					},
+					{
+						"StationName": "う駅",
+						"km": 4.0,
+						"Display": "Outbound-Arr"
+					}
+				]
+			}
+		]
+	},
+	
+	"ClassConfig": [
+		{"Name": "各停", "TextColor": "#000000"},
+		{"Name": "準急", "TextColor": "#008000"},
+		{"Name": "急行", "TextColor": "#ff0000"},
+		{"Name": "特急", "TextColor": "#ff8000"}
+	],
+	
+	"DiagramConfig": {
+		"Inbound": [
+			{
+				"TrainNumber": 7000,
+				"Class": 0,
+				"Stop": [1, 1, 1, 1],
+				"Time": ["12:00:00", "12:03:00", "12:06:00", "12:09:00"]
+			},
+			{
+				"TrainNumber": 7002,
+				"Class": 0,
+				"Stop": [1, 1, 1, 1],
+				"Time": ["12:00:00", "12:03:00", "12:06:00", "12:09:00"]
+			}
+		]
+	}
+	
+}
