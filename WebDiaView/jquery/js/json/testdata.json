@@ -6,70 +6,159 @@
 	
 	"RouteConfig": {
 		"CompanyName": "テスト鉄道",
-		"Route": {
-			"RouteName": "A線",
-			"Station": [
-				{
-					"StationName": "あ駅",
-					"km": "0.0",
-					"Display": "Inbound-Arr"
-				},
-				{
-					"StationName": "い駅",
-					"km": "2.0",
-					"Display": "DepOnly"
-				},
-				{
-					"StationName": "い-2駅",
-					"km": "3.0",
-					"Display": "DepArr"
-				},
-				{
-					"StationName": "う駅",
-					"km": "4.0",
-					"Display": "DepArr"
-				},
-				{
-					"StationName": "お駅",
-					"km": "6.0",
-					"Display": "Outbound-Arr"
-				}
-			]
-		}
+		"RouteName": "A線",
+		"Station": [
+			{
+				"StationName": "あ駅",
+				"km": "0.0",
+				"Display": "Inbound-Arr"
+			},
+			{
+				"StationName": "い駅",
+				"km": "2.0",
+				"Display": "DepOnly"
+			},
+			{
+				"StationName": "い-2駅",
+				"km": "3.0",
+				"Display": "DepArr"
+			},
+			{
+				"StationName": "う駅",
+				"km": "4.0",
+				"Display": "DepArr"
+			},
+			{
+				"StationName": "え駅",
+				"km": "6.0",
+				"Display": "DepOnly"
+			},
+			{
+				"StationName": "お駅",
+				"km": "7.52",
+				"Display": "Outbound-Arr"
+			}
+		]
 	},
 	
 	"ClassConfig": [
-		{"Name": "各停", "TextColor": "#000000"},
-		{"Name": "準急", "TextColor": "#008000"},
-		{"Name": "急行", "TextColor": "#ff0000"},
-		{"Name": "特急", "TextColor": "#ff8000"}
+		{"ShortName": "各停", "TextColor": "#000000"},
+		{"ShortName": "準急", "TextColor": "#008000"},
+		{"ShortName": "急行", "TextColor": "#ff0000"},
+		{"ShortName": "特急", "TextColor": "#ff8000"}
 	],
 	
 	"DiagramConfig": {
-		"Type": [
-			{
-				"Name": "weekday",
-				"Inbound": [
-					{
-						"TrainNumber": "7000",
-						"Class": "0",
-						"Stop": ["1", "1", "1", "1"],
-						"Time": ["12:00:00", "12:03:00", "12:06:00", "12:09:00"]
-					},
-					{
-						"TrainNumber": "7004",
-						"Class": "0",
-						"Stop": ["1", "1", "1", "1"],
-						"Time": ["12:05:00", "12:08:00", "12:12:00", "12:16:00"]
-					},
-					{
-						"TrainNumber": "7006",
-						"Class": "0",
-						"Stop": ["1", "1", "1", "1"],
-						"Time": ["12:07:00", "12:14:00", "12:16:00", "12:18:00"]
-					}
-				]
-			}
-		]			
+		"平日": {
+			"上り": [
+				{
+					"TrainNumber": "7001",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:00:00", "Departure": "12:00:30"},
+						{"Arrive": "12:01:00", "Departure": "12:01:30"},
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"}
+					]
+				},
+				{
+					"TrainNumber": "7003",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:01:00", "Departure": "12:01:30"},
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"}
+					]
+				},
+				{
+					"TrainNumber": "7005",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"}
+					]
+				},
+				{
+					"TrainNumber": "7007",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"},
+						{"Arrive": "12:07:00", "Departure": "12:07:30"},
+						{"Arrive": "12:07:00", "Departure": "12:07:30"}
+					]
+				}
+			],
+			
+			"下り": [
+				{
+					"TrainNumber": "7000",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:00:00", "Departure": "12:00:30"},
+						{"Arrive": "12:01:00", "Departure": "12:01:30"},
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"}
+					]
+				},
+				{
+					"TrainNumber": "7004",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:01:00", "Departure": "12:01:30"},
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"}
+					]
+				},
+				{
+					"TrainNumber": "7006",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:02:00", "Departure": "12:02:30"},
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"}
+					]
+				},
+				{
+					"TrainNumber": "7008",
+					"Class": "0",
+					"Stop": ["1", "1", "1", "1", "1"],
+					"Time": [
+						{"Arrive": "12:03:00", "Departure": "12:03:30"},
+						{"Arrive": "12:04:00", "Departure": "12:04:30"},
+						{"Arrive": "12:05:00", "Departure": "12:05:30"},
+						{"Arrive": "12:06:00", "Departure": "12:06:30"},
+						{"Arrive": "12:07:00", "Departure": "12:07:30"},
+						{"Arrive": "12:07:00", "Departure": "12:07:30"}
+					]
+				}
+			]
+		}		
 	}
 }
