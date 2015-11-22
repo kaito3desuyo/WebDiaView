@@ -20,7 +20,7 @@ function load_oud_file_new($filename){
 	$dataname = null;
 	$Direction = null;
 	$oudArray = array();
-	echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	//各情報の開始行を取得する
 	$RouteRow = array_keys($content, "Rosen.");
@@ -30,7 +30,7 @@ function load_oud_file_new($filename){
 	$TrainRow = array_keys($content, "Ressya.");
 	$ConfigRow = array_keys($content, "DispProp.");
 	
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	foreach($ConfigRow as $i){
 		//設定情報
@@ -69,7 +69,7 @@ function load_oud_file_new($filename){
 		break;
 	}
 	
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	foreach($RouteRow as $i){
 		//路線情報
@@ -79,7 +79,7 @@ function load_oud_file_new($filename){
 		break;
 	}
 	
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	$Stanum = 0;
 	foreach($StationRow as $i){
@@ -102,7 +102,7 @@ function load_oud_file_new($filename){
 		break;
 	}
 	
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	
 	$TrainTypenum = 0;
 	foreach($ClassRow as $i){
@@ -133,7 +133,7 @@ function load_oud_file_new($filename){
 		$TrainTypenum++;
 	}
 	
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 
 	foreach($DiaRow as $i){
 		
@@ -172,7 +172,7 @@ function load_oud_file_new($filename){
 		
 	}
 
-	echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
+	//echo "<br>MEMORY : " . number_format(memory_get_usage()) . " byte";
 	echo "<pre>";
 	var_dump($oudArray);
 	echo "</pre>";
@@ -318,6 +318,7 @@ function load_oud_file($filename){
 			
 			//ダイヤ情報
 			$DiaName = explode("=", $content[$i + 1]);
+			//var_dump($DiaName);
 			$oudArray["DiaData"][$DiaName[1]] = array("上り" => array(), "下り" => array());
 						
 			$k = $i + 1;
@@ -430,21 +431,72 @@ function load_oud_file($filename){
 	unset($Dianum);
 	unset($row);
 
+	var_dump(array_keys($oudArray["DiaData"]));
+	
 	return $oudArray;
 }
 
-function select_dia_table($filename, $day, $direction){
-	$data = load_oud_file($filename);
+function select_dia_table($filename){
+	$data = load_oud_file_new($filename);
 	
-	if($direction === "上り"){
-		$data["StaData"] = array_reverse($data["StaData"]);
+	//if($direction === "上り"){
+	//	$data["StaData"] = array_reverse($data["StaData"]);
+	//}
+	//路線データ
+	//$ret["RouteConfig"] = $data["RouteData"];
+	$ret["RouteConfig"]["RouteName"] = $data["RouteData"]["Name"];
+	$ret["RouteConfig"]["Station"] = $data["StaData"];
+	$i = 0;
+	foreach($ret["RouteConfig"]["Station"] as $value){
+		$ret["RouteConfig"]["Station"][$i]["StationName"] = $value["name"];
+		$ret["RouteConfig"]["Station"][$i]["km"] = null;
+		$ret["RouteConfig"]["Station"][$i]["Display"] = $value["type"];
+		$ret["RouteConfig"]["Station"][$i]["StationScale"] = $value["scale"];
+		unset($ret["RouteConfig"]["Station"][$i]["name"]);
+		unset($ret["RouteConfig"]["Station"][$i]["type"]);
+		unset($ret["RouteConfig"]["Station"][$i]["scale"]);
+		unset($ret["RouteConfig"]["Station"][$i][""]);
+		$i++;
 	}
 	
-	$ret["RouteData"] = $data["RouteData"];
-	$ret["StaData"] = $data["StaData"];
-	$ret["TrainTypeData"] = $data["TrainTypeData"];
-	$ret["DiaData"] = $data["DiaData"][$day][$direction];
-	$ret["ConfigData"] = $data["ConfigData"];
+	$ret["ClassConfig"] = $data["TrainTypeData"];
+	$i = 0;
+	foreach($ret["ClassConfig"] as $value){
+		$ret["ClassConfig"][$i]["Name"] = $value["shortname"];
+		$ret["ClassConfig"][$i]["TextColor"] = $value["textcolor"];
+		$ret["ClassConfig"][$i]["LineColor"] = $value["linecolor"];
+		$ret["ClassConfig"][$i]["LineType"] = $value["linetype"];
+		unset($ret["ClassConfig"][$i]["fullname"]);
+		unset($ret["ClassConfig"][$i]["shortname"]);
+		unset($ret["ClassConfig"][$i]["textcolor"]);
+		unset($ret["ClassConfig"][$i]["linecolor"]);
+		unset($ret["ClassConfig"][$i]["linetype"]);
+		unset($ret["ClassConfig"][$i]["stopmark"]);
+		unset($ret["ClassConfig"][$i][""]);
+		$i++;
+	}
+	
+	$keys = array_keys($data["DiaData"]);
+	//var_dump($keys);
+	
+		$i = 0;
+		foreach($data["DiaData"][$day]["上り"] as $value){
+		
+			$ret["DiagramConfig"][$day]["上り"][$i]["TrainNumber"] = $value["trainnumber"];
+			$ret["DiagramConfig"][$day]["上り"][$i]["Class"] = $value["traintype"];
+			$ret["DiagramConfig"][$day]["上り"][$i]["TrainName"] = $value["trainname"];
+			$ret["DiagramConfig"][$day]["上り"][$i]["TrainNo"] = $value["Gousuu"];
+		
+			$k = 0;
+			foreach($data["DiaData"][$day]["上り"][$i]["time"] as $value2){
+				//var_dump($value2);
+				$ret["DiagramConfig"][$day]["上り"][$i]["Time"][$k] = array(	"Stop" => $value2["stop"],
+																			"Arrive" => $value2["value"]["Arr"],
+																			"Departure" => $value2["value"]["Dep"]);
+				$k++;
+			}
+			$i++;
+		}
 	
 	return $ret;
 }
@@ -742,10 +794,10 @@ function Value_convert($str){
 			return "DepArr";
 			break;
 		case $str === "Jikokukeisiki_NoboriChaku":
-			return "UpArr";
+			return "Inbound-Arr";
 			break;
 		case $str === "Jikokukeisiki_KudariChaku":
-			return "DownArr";
+			return "Outbound-Arr";
 			break;
 		case $str === "Ekikibo_Ippan":
 			return "Normal";
