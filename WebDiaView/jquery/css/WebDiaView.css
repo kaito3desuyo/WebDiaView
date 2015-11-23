@@ -1,0 +1,43 @@
+.wdv-table{
+	border:1px solid #000;
+	white-space: nowrap;
+	border-collapse:collapse;
+}
+
+.wdv-headercol{
+	text-align:center;
+	border:1px solid #000;
+	background-color:#eee;
+}
+
+.wdv-Traincol{
+	text-align:center;
+	border:1px solid #000;
+}
+
+.wdv-Classcol{
+	text-align:center;
+	border:1px solid #000;
+}
+
+.wdv-StationNamecol{
+	border-left:1px solid #000;
+}
+
+.wdv-Timecol{
+	text-align:center;
+	border-left:1px solid #000;
+	border-right:1px solid #000;
+}
+
+.wdv-Arrcol{
+	border-bottom:1px solid #000;
+}
+
+.wdv-Bordercol-Top{
+	border-top:2px solid #000;
+}
+
+.wdv-Bordercol-Bottom{
+	border-bottom:2px solid #000;
+}
