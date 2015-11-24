@@ -79,7 +79,7 @@ function loading_file($filename){
 	foreach($DiaRowStart as $i){
 		//ダイヤ情報
 		$DiaName = explode("=", $content[$i + 1]);
-		$oudArray["DiagramConfig"][$DiaName[1]] = array("上り" => array(), "下り" => array());
+		$oudArray["DiagramConfig"][] = array("DiaName" => $DiaName[1], "Inbound" => array(), "Outbound" => array());
 	}
 	
 	foreach($TrainRowStart as $i){
@@ -97,9 +97,9 @@ function loading_file($filename){
 
 			//上下判別
 			if($result[0] === "Houkou" && $result[1] === "Kudari"){
-				$Direction = "下り";
+				$Direction = "Outbound";
 			}elseif($result[0] === "Houkou" && $result[1] === "Nobori"){
-				$Direction = "上り";
+				$Direction = "Inbound";
 			}
 			
 			$Param = Param_Analyse($result[0]);
@@ -142,15 +142,23 @@ function loading_file($filename){
 				}
 			}
 			
-			$oudArray["DiagramConfig"][$DiaName][$Direction][$i][$Param] = $Value;
-			
+			for($j = 0; $j < count($oudArray["DiagramConfig"]); $j++){
+				if($DiaName === $oudArray["DiagramConfig"][$j]["DiaName"]){
+					$oudArray["DiagramConfig"][$j][$Direction][$i][$Param] = $Value;
+				}
+			}
+					
 			unset($result);
 			unset($Param);
 			unset($Value);
 			$k++;
 		}
-		$oudArray["DiagramConfig"][$DiaName]["下り"] = array_values($oudArray["DiagramConfig"][$DiaName]["下り"]);//配列の番号を振り直し
-		$oudArray["DiagramConfig"][$DiaName]["上り"] = array_values($oudArray["DiagramConfig"][$DiaName]["上り"]);//配列の番号を振り直し
+		
+		for($j = 0; $j < count($oudArray["DiagramConfig"]); $j++){
+			$oudArray["DiagramConfig"][$j]["Inbound"] = array_values($oudArray["DiagramConfig"][$j]["Inbound"]);//配列の番号を振り直し
+			$oudArray["DiagramConfig"][$j]["Outbound"] = array_values($oudArray["DiagramConfig"][$j]["Outbound"]);//配列の番号を振り直し
+		}
+
 	}
 
 	return $oudArray;

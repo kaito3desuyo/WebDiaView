@@ -9,7 +9,7 @@ include('oud_json_converter.php');
 <body>
 <a href="download.php">ダウンロード</a>
 <pre>
-<?php var_dump(loading_file("oud/hanshin_sanyo_0903.oud")); ?>
+<?php var_dump(loading_file("oud/STK.oud")); ?>
 </pre>
 </body>
 </html>
