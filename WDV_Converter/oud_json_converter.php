@@ -1,4 +1,49 @@
 <?php
+function upload_file(){
+	///////////////////////
+	//ファイルアップロード処理部//
+	///////////////////////
+	try{
+		if(!isset($_FILES['upfile']['error']) || !is_int($_FILES['upfile']['error'])){
+			throw new RuntimeException("不正なパラメータです。管理人にお問い合わせください。");
+		}
+		
+		switch($_FILES["upfile"]["error"]){
+			case UPLOAD_ERR_OK:
+				break;
+			case UPLOAD_ERR_NO_FILE:
+				throw new RuntimeException("ファイルが選択されていません。");
+				break;
+			case UPLOAD_ERR_INI_SIZE:
+			case UPLOAD_ERR_FORM_SIZE:
+				throw new RuntimeException("ファイルサイズが許容値を超えています。");
+				break;
+			default:
+				throw new RuntimeException("不明なエラーが発生しました。");
+		}
+		
+		$finfo = new finfo(FILEINFO_MIME_TYPE);
+		if(
+			!array_search($finfo->file($_FILES["upfile"]["tmp_name"]), array("oud" => 'text/plain'), true)
+			|| pathinfo($_FILES["upfile"]["name"])["extension"] !== "oud"
+		){
+			throw new RuntimeException("oudファイルではありません。");
+		}
+		
+		$content = file_get_contents($_FILES["upfile"]["tmp_name"]);
+		if(!preg_match("/FileType=OuDia/", $content)){
+			throw new RuntimeException("oudファイルですが、書式が正しくありません。");
+		}
+		unset($content);
+		
+		loading_file($_FILES["upfile"]["tmp_name"]);
+		
+	}catch(Exception $e){
+		echo "エラーが発生しました：".$e->getMessage();
+		exit();
+	}
+}
+
 function loading_file($filename){
 	////////////////////////////
 	//ファイル読み込み部          //
@@ -161,15 +206,15 @@ function loading_file($filename){
 
 	}
 
-	return $oudArray;
+	convert_json($oudArray);
 }
 
-function convert_json($filename){
+function convert_json($array){
 	////////////////////////////
 	//JSONファイル変換出力部     //
 	//@param $filename ファイル名//
 	////////////////////////////
-	$array = loading_file($filename);
+	header("Content-Type: application/json; charset=utf-8");
 	echo json_encode($array);
 }
 
