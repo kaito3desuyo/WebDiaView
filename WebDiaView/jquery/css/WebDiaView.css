@@ -1,43 +1,67 @@
-.wdv-table{
+﻿.wdv-table{
 	border:1px solid #000;
 	white-space: nowrap;
 	border-collapse:collapse;
+	text-align:center;
 }
 
-.wdv-headercol{
-	text-align:center;
+/*全線時刻表関連*/
+
+.wdv-AllRoute-headercol{
 	border:1px solid #000;
 	background-color:#eee;
 }
 
-.wdv-Traincol{
-	text-align:center;
+.wdv-AllRoute-Traincol{
 	border:1px solid #000;
 }
 
-.wdv-Classcol{
-	text-align:center;
+.wdv-AllRoute-Classcol{
 	border:1px solid #000;
 }
 
-.wdv-StationNamecol{
+.wdv-AllRoute-StationNamecol{
 	border-left:1px solid #000;
+	text-align:right;
 }
 
-.wdv-Timecol{
-	text-align:center;
+.wdv-AllRoute-Timecol{
 	border-left:1px solid #000;
 	border-right:1px solid #000;
 }
 
-.wdv-Arrcol{
+.wdv-AllRoute-Arrcol{
 	border-bottom:1px solid #000;
 }
 
-.wdv-Bordercol-Top{
+.wdv-AllRoute-Bordercol-Top{
 	border-top:2px solid #000;
 }
 
-.wdv-Bordercol-Bottom{
+.wdv-AllRoute-Bordercol-Bottom{
 	border-bottom:2px solid #000;
+}
+
+/*駅時刻表関連*/
+.wdv-Station-Header{
+	font-size:24px;
+	background-color:#eee;
+}
+
+.wdv-Station-Hourcol{
+	border-top:1px solid #000;
+	border-bottom:1px solid #000;
+	border-right:2px solid #000;
+	font-size:36px;
+}
+
+.wdv-Station-Traincol{
+	border-top:1px solid #000;
+	border-bottom:1px solid #000;
+}
+
+.wdv-Station-TrainInfo{}
+
+.wdv-Station-Time{
+	font-size:36px;
 }

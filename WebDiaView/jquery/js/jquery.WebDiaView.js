@@ -6,8 +6,8 @@
 		//デフォルト引数の設定
 		var defaults = {
 			text: 'This is WebDia View Plugin',
-			path: 'js/json/Hanwa.json',			//パス
-			mode: 'Station',							//表示モード
+			path: 'js/json/Hanshin-Sanyo.json',					//パス
+			mode: 'AllRoute',							//表示モード
 			modeselect: true,							//表示モードの切り替えtrue/false
 			type: 0,									//時刻表データ選択初期値
 			direction: 'Outbound',						//上下選択初期値
@@ -15,15 +15,17 @@
 			stanum: 0,									//駅番号（全駅検索のみ使用）
 			maxcol: 20,									//最大表示列数（全線検索のみ使用）
 			startcol: 33,								//表示開始列数（全線検索のみ使用）
+			starttime: 4,								//表示開始時刻（全駅検索のみ使用）
+			endtime: 1,									//表示終了時刻（全駅検索のみ使用）
 			passmark: '&#x2193;',						//通過マーク
 			noviamark: '&#124;',						//経由なしマーク
 			noservicemark: '&#x2025;',					//運行なしマーク
 			finalstopmark: '&#61;',						//終点マーク
 			mainstamark: '&#x2500;',					//主要駅マーク
 			traincolumn: [								//ヘッダーカラムの数と名前と変数名
-							["列車番号", "SelectDia[j].TrainNumber", "wdv-Traincol-TrainNumber", false],
-							["列車種別", "data.ClassConfig[SelectDia[j].Class].ShortName", "wdv-Traincol-Class", false],
-							["列車名", "SelectDia[j].TrainName + SelectDia[j].TrainNo", "wdv-Traincol-TrainName", true],
+							["列車番号", "SelectDia[j].TrainNumber", "wdv-AllRoute-Traincol-TrainNumber", false],
+							["列車種別", "data.ClassConfig[SelectDia[j].Class].ShortName", "wdv-AllRoute-Traincol-Class", false],
+							["列車名", "SelectDia[j].TrainName + SelectDia[j].TrainNo", "wdv-AllRoute-Traincol-TrainName", true],
 						],
 			stationcolumn: [							//上に同じく
 							["", ""],
@@ -162,6 +164,7 @@
 			});	
 			
 			$('.wdv-form-button').click(function(e){
+				$('p.wdv-controllmenu').empty();
 				$('table.wdv-table').empty();
 				setTimeout(function(){
 					eval("TableFormat_" + setting.mode)(data, setting);
@@ -200,12 +203,12 @@
 								"2": [],
 								"3": []
 							};
+			var DupTraNumChk = [];
 			
 			if(setting.direction !== setting.dirChange){//上りダイヤ選択時は駅情報を逆順にする
 				Stations = Stations.reverse();
 				setting.direction = setting.dirChange;
 			}
-			
 			
 			//駅番号にカンマがない（複数の番号がない）なら末尾にカンマを付ける
 			if(String(setting.stanum).match(/,/) === null){
@@ -236,9 +239,7 @@
 							FinalStop = "？";
 						}
 					});
-				
-
-				
+							
 					if(val.Time[StaNum] && val.Time[StaNum].Departure !== "" && val.Time[StaNum].Stop === "1"){
 					
 						switch(val.Time[StaNum].Departure.length){
@@ -265,6 +266,10 @@
 							default:
 								var newAryKey = null;
 						}
+						
+						if($.inArray(val.TrainNumber, DupTraNumChk) >= 0){
+							return true;
+						}
 					
 						StationDia[Number(newAryKey)].push(
 															{
@@ -280,35 +285,66 @@
 																"TextColor": data.ClassConfig[Number(val.Class)].TextColor
 															}
 														);
+						
+						DupTraNumChk.push(val.TrainNumber);
 														
 					}
 				});
 			});
 			
-			//Table描画
-			var TimeDupChk = "";//時刻重複検出
-			//var TraNoDupChk = "";//列車番号重複検出
+			////Table描画
+			var RowNum = 0;
+			var TrainNum = 0;
+			//最大列車数を取得する
 			$.each(StationDia, function(key, val){
-				$('table.wdv-table').append("<tr></tr>");
+				if(TrainNum < val.length){
+					TrainNum = val.length;
+				}
+			});
+			
+			//thead - 検索内容の表示
+			$('table.wdv-table').append("<thead></thead>");
+			$('table.wdv-table thead').append(
+											"<tr><td class=\"wdv-Station-Header\" colspan=\"" + eval(TrainNum + 1) + "\">" +
+											$(".wdv-form-selectbox-station option:selected").text() + "駅" +
+											$(".wdv-form-selectbox-day option:selected").text() +
+											$(".wdv-form-selectbox-direction option:selected").text() +
+											"時刻表" +
+											"</td></tr>"
+											);
+			
+			//tbody - メインカラム
+			$('table.wdv-table').append("<tbody></tbody>");
+			for(var key = setting.starttime; true; key++){
+				$('table.wdv-table tbody').append("<tr></tr>");
 				var td = [];
-				td.push("<td>" + key + "時</td>");
+				td.push("<td class=\"wdv-Station-Hourcol\">" + String(key) + "</td>");
 				
 				//分でソート
-				val.sort(function(a,b){
+				StationDia[key].sort(function(a,b){
 					return(a.DepMin - b.DepMin || a.DepSec - b.DepSec);
 				});
 				
-				$.each(val, function(key, val){
-					//列車の重複を検査
-					if(val.Departure !== TimeDupChk){
-						td.push("<td style=\"color:" + val.TextColor + ";\">" + val.DepMin + "<br>" + val.Class + val.FinalStop + "</td>");
+				for(var i = 0; i < TrainNum; i++){
+					if(StationDia[key][i]){
+						td.push("<td class=\"wdv-Station-Traincol\" style=\"color:" + StationDia[key][i].TextColor + ";\"><span class=\"wdv-Station-TrainInfo\">" + StationDia[key][i].Class + StationDia[key][i].FinalStop + "</span><br><span class=\"wdv-Station-Time\">" + StationDia[key][i].DepMin + "</span></td>");
+					}else{
+						td.push("<td class=\"wdv-Station-Traincol\"></td>");
 					}
-					TimeDupChk = val.Departure;
-					//TraNoDupChk = val.TrainNumber;
-				});
+				}
 				
-				$('table.wdv-table tr:eq(' + key +')')[0].innerHTML = td.join("");
-			});
+				$('table.wdv-table tbody tr:eq(' + RowNum +')')[0].innerHTML = td.join("");
+				
+				//23時になったらkeyを0 - 1に戻す
+				if(key === 23){
+					key = -1;
+				//終電時刻になったら終了
+				}else if(key === setting.endtime){
+					break;
+				}
+
+				RowNum++;
+			}
 		}
 		
 		function TableFormat_AllRoute(data, setting){
@@ -363,7 +399,7 @@
 			$.each(setting.traincolumn, function(i, val){
 				var td = [];
 				$('table.wdv-table').append("<tr></tr>");
-				td.push("<td colspan=\"2\" class=\"wdv-headercol\">" + setting.traincolumn[i][0] + "</td>");
+				td.push("<td colspan=\"2\" class=\"wdv-AllRoute-headercol\">" + setting.traincolumn[i][0] + "</td>");
 				
 				var colnum = 0;
 				for(var j = Number(setting.startcol); j < SelectDia.length; j++){
@@ -394,7 +430,7 @@
 						Address = yomiganamode(Address);
 					}
 					
-					td.push("<td class=\"wdv-Traincol " + setting.traincolumn[i][2] + "\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + Address + "</td>");
+					td.push("<td class=\"wdv-AllRoute-Traincol " + setting.traincolumn[i][2] + "\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + Address + "</td>");
 					
 					colnum++;
 					//最大行数になったらやめる
@@ -413,22 +449,22 @@
 			var Row = RowNum;//列車情報カラムの行数に応じて自動調整
 			$.each(Stations, function(i, val){
 				
-				var CSS_Class_kmCol = "wdv-kmcol ";//営業キロカラムCSSクラス初期設定
-				var CSS_Class_StaNameCol = "wdv-StationNamecol ";//駅名カラムCSSクラス初期設定
-				var CSS_Class_DepArrCol = "wdv-DepArrcol ";//発着表示カラムCSSクラス初期設定
-				var CSS_Class_TimeCol = "wdv-Timecol ";//時刻カラムCSSクラス初期設定
+				var CSS_Class_kmCol = "wdv-AllRoute-kmcol ";//営業キロカラムCSSクラス初期設定
+				var CSS_Class_StaNameCol = "wdv-AllRoute-StationNamecol ";//駅名カラムCSSクラス初期設定
+				var CSS_Class_DepArrCol = "wdv-AllRoute-DepArrcol ";//発着表示カラムCSSクラス初期設定
+				var CSS_Class_TimeCol = "wdv-AllRoute-Timecol ";//時刻カラムCSSクラス初期設定
 				if(this.Kyoukaisen){
 					//境界線クラスの追加
 					if(setting.direction === "Inbound"){
-						CSS_Class_kmCol = CSS_Class_kmCol + "wdv-Bordercol-Top";
-						CSS_Class_StaNameCol = CSS_Class_StaNameCol + "wdv-Bordercol-Top";
-						CSS_Class_DepArrCol = CSS_Class_DepArrCol + "wdv-Bordercol-Top";
-						CSS_Class_TimeCol = CSS_Class_TimeCol + "wdv-Bordercol-Top";
+						CSS_Class_kmCol = CSS_Class_kmCol + "wdv-AllRoute-Bordercol-Top";
+						CSS_Class_StaNameCol = CSS_Class_StaNameCol + "wdv-AllRoute-Bordercol-Top";
+						CSS_Class_DepArrCol = CSS_Class_DepArrCol + "wdv-AllRoute-Bordercol-Top";
+						CSS_Class_TimeCol = CSS_Class_TimeCol + "wdv-AllRoute-Bordercol-Top";
 					}else if(setting.direction === "Outbound"){
-						CSS_Class_kmCol = CSS_Class_kmCol + "wdv-Bordercol-Bottom";
-						CSS_Class_StaNameCol = CSS_Class_StaNameCol + "wdv-Bordercol-Bottom";
-						CSS_Class_DepArrCol = CSS_Class_DepArrCol + "wdv-Bordercol-Bottom";
-						CSS_Class_TimeCol = CSS_Class_TimeCol + "wdv-Bordercol-Bottom";
+						CSS_Class_kmCol = CSS_Class_kmCol + "wdv-AllRoute-Bordercol-Bottom";
+						CSS_Class_StaNameCol = CSS_Class_StaNameCol + "wdv-AllRoute-Bordercol-Bottom";
+						CSS_Class_DepArrCol = CSS_Class_DepArrCol + "wdv-AllRoute-Bordercol-Bottom";
+						CSS_Class_TimeCol = CSS_Class_TimeCol + "wdv-AllRoute-Bordercol-Bottom";
 					}
 
 				}
@@ -441,7 +477,7 @@
 					$('table.wdv-table').append("<tr></tr>");
 					//td.push("<td class=\"" + CSS_Class_kmCol + "\" rowspan=\"2\">" + undefined_to_space(Stations[i].km) + "</td>");//営業キロ
 					td.push("<td class=\"" + CSS_Class_StaNameCol + "\" rowspan=\"2\">" + Stations[i].StationName + "</td>");//駅名
-					td.push("<td class=\"" + CSS_Class_DepArrCol + "wdv-Arrcol\">" + "着" + "</td>");//発着表示
+					td.push("<td class=\"" + CSS_Class_DepArrCol + "wdv-AllRoute-Arrcol\">" + "着" + "</td>");//発着表示
 					
 					var colnum = 0;
 					for(var j = Number(setting.startcol); j < SelectDia.length; j++){
@@ -459,7 +495,7 @@
 						if(TimeCol.length === 3){
 							TimeCol = "　" + TimeCol;
 						}
-						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-Arrcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
+						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-AllRoute-Arrcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
 					
 						colnum++;
 						//最大行数になったらやめる
@@ -475,7 +511,7 @@
 					var td = [];
 					var DepArr = "Departure";
 					$('table.wdv-table').append("<tr></tr>");
-					td.push("<td class=\"" + CSS_Class_DepArrCol + "wdv-Depcol\">" + "発" + "</td>");//発着表示
+					td.push("<td class=\"" + CSS_Class_DepArrCol + "wdv-AllRoute-Depcol\">" + "発" + "</td>");//発着表示
 					
 					var colnum = 0;
 					for(var j = Number(setting.startcol); j < SelectDia.length; j++){
@@ -492,7 +528,7 @@
 						if(TimeCol.length === 3){
 							TimeCol = "　" + TimeCol;
 						}
-						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-Depcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
+						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-AllRoute-Depcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
 					
 						colnum++;
 						//最大行数になったらやめる
