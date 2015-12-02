@@ -6,7 +6,7 @@
 		//デフォルト引数の設定
 		var defaults = {
 			text: 'This is WebDia View Plugin',
-			path: 'js/json/Hanshin-Sanyo.json',					//パス
+			path: 'js/json/skyaccess.json',					//パス
 			mode: 'AllRoute',							//表示モード
 			modeselect: true,							//表示モードの切り替えtrue/false
 			type: 0,									//時刻表データ選択初期値
@@ -14,7 +14,7 @@
 			dirChange: null,							//上下選択が操作された時、古い情報を入れるバッファ
 			stanum: 0,									//駅番号（全駅検索のみ使用）
 			maxcol: 20,									//最大表示列数（全線検索のみ使用）
-			startcol: 33,								//表示開始列数（全線検索のみ使用）
+			startcol: 0,								//表示開始列数（全線検索のみ使用）
 			starttime: 4,								//表示開始時刻（全駅検索のみ使用）
 			endtime: 1,									//表示終了時刻（全駅検索のみ使用）
 			passmark: '&#x2193;',						//通過マーク
@@ -36,22 +36,22 @@
 		var setting = $.extend(defaults, options);
 		
 		//メイン処理関数
-		var wdv_writing_table = function(setting){
-			//JSONデータの読み込み→テーブル描画
+		this.each(function(){
+			getJSON($(this));
+		});
+		
+		//JSONを取得する
+		function getJSON(e){
 			$.getJSON(
 				setting.path,
 				function(data){
-					Search_Form(data);
+					Create_SearchForm(data);
 				}
-				//eval("TableFormat_" + setting.mode)
 			);
 		}
-		
-		//関数読み込み
-		wdv_writing_table(setting);	
-		
-		//フォーム生成関数
-		function Search_Form(data){
+				
+		//検索フォーム生成関数
+		function Create_SearchForm(data){
 			var url = window.location.href;
 			var filename = url.match(".+/(.+?)([\?#;].*)?$")[1];
 			var txt = [];
@@ -166,9 +166,9 @@
 			$('.wdv-form-button').click(function(e){
 				$('p.wdv-controllmenu').empty();
 				$('table.wdv-table').empty();
-				setTimeout(function(){
+				//setTimeout(function(){
 					eval("TableFormat_" + setting.mode)(data, setting);
-				},500);
+				//},500);
 			});
 		}
 		
@@ -419,9 +419,9 @@
 							}
 						});
 					}
-					
+
 					//号数があれば、号を入れる
-					if(setting.traincolumn[i][0] === "列車名"　&& SelectDia[j].TrainNo){
+					if(setting.traincolumn[i][0] === "列車名"　&& typeof SelectDia[j].TrainNo !== "undefined"){
 						Address = Address + "<br>号";
 					}
 					
@@ -591,6 +591,7 @@
 					$('table.wdv-table tr:eq('+ Row +')')[0].innerHTML = td.join("");
 					Row = Row + 1;
 				}
+
 				TimeCol = null;
 			});
 		}
@@ -645,8 +646,7 @@
 					break;
 			}
 		}
-
-		
+	
 		//メソッドチェーン対応
 		return(this);
 	};
