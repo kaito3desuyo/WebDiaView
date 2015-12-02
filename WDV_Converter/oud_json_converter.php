@@ -215,6 +215,7 @@ function convert_json($array){
 	//@param $filename ファイル名//
 	////////////////////////////
 	header("Content-Type: application/json; charset=utf-8");
+	//var_dump($array);
 	echo json_encode($array);
 }
 

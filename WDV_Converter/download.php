@@ -1,5 +1,6 @@
 <?php 
-include('oud_json_converter.php');
-upload_file();
+include('wdv-converter.php');
+$conv = new wdv_converter();
+$conv->convert_execute();
 exit();
 ?>

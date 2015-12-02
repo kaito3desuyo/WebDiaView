@@ -9,8 +9,8 @@
 <h2>使い方</h2>
 <p>
 1.下記フォームにお手持ちのoudファイルを指定してください。<br>
-2.変換ボタンを押すとJSON文字列が表示されますので、ブラウザ画面を右クリックし、適当に名前を付け拡張子jsonとして「名前を付けて保存」してください。<br>
-3.WebDiaViewで変換されたjsonファイルを指定することにより、時刻表表示がご利用いただけます。
+2.変換ボタンを押すとJSONファイルのダウンロード画面が表示されますので、使用するサーバー上の任意の場所に保存してください。<br>
+3.WebDiaViewで変換されたjsonファイルのパスを指定することにより、時刻表表示がご利用いただけます。
 </p>
 <form action="download.php" method="post" enctype="multipart/form-data">
 <input type="file" name="upfile" size="30"><br><br>
