@@ -6,7 +6,7 @@
 		//デフォルト引数の設定
 		var defaults = {
 			text: 'This is WebDia View Plugin',
-			path: 'js/json/skyaccess.json',					//パス
+			path: 'js/json/SKKT-South.json',					//パス
 			mode: 'AllRoute',							//表示モード
 			modeselect: true,							//表示モードの切り替えtrue/false
 			type: 0,									//時刻表データ選択初期値
@@ -25,7 +25,7 @@
 			traincolumn: [								//ヘッダーカラムの数と名前と変数名
 							["列車番号", "SelectDia[j].TrainNumber", "wdv-AllRoute-Traincol-TrainNumber", false],
 							["列車種別", "data.ClassConfig[SelectDia[j].Class].ShortName", "wdv-AllRoute-Traincol-Class", false],
-							["列車名", "SelectDia[j].TrainName + SelectDia[j].TrainNo", "wdv-AllRoute-Traincol-TrainName", true],
+							["列車名", ["SelectDia[j].TrainName","SelectDia[j].TrainNo"], "wdv-AllRoute-Traincol-TrainName", true],
 						],
 			stationcolumn: [							//上に同じく
 							["", ""],
@@ -268,7 +268,8 @@
 						}
 						
 						if($.inArray(val.TrainNumber, DupTraNumChk) >= 0){
-							return true;
+							//同じ列車番号の列車を表示させない
+							//return true;
 						}
 					
 						StationDia[Number(newAryKey)].push(
@@ -405,7 +406,13 @@
 				for(var j = Number(setting.startcol); j < SelectDia.length; j++){
 					var Address = eval(setting.traincolumn[i][1]);//変数参照先の取得
 					var test = "";
-					Address = traincolumn_validate_strings(Address);//無駄な空白と未定義の削除
+					
+					//バリデーション
+					if(typeof Address === "object"){
+						Address = traincolumn_validate_strings(eval(Address[0])) + traincolumn_validate_strings(eval(Address[1]));
+					}else{
+						Address = traincolumn_validate_strings(Address);
+					}
 
 					//縦書きtrueの場合は一文字ずつ分けて改行タグを仕込む
 					if(setting.traincolumn[i][3] === true){
@@ -490,11 +497,17 @@
 						}else{
 							var TimeCol = eval("SelectDia[j].Time[i]." + DepArr);
 						}
-						
-						//3桁時は時刻の前に半角空白
+												
+						//桁数によって表示を切り替え
 						if(TimeCol.length === 3){
 							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.length === 5){
+							TimeCol = TimeCol.slice(0, 3);
+							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.slice(0, 1) !== "&" && TimeCol.length === 6){
+							TimeCol = TimeCol.slice(0, 4);
 						}
+
 						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-AllRoute-Arrcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
 					
 						colnum++;
@@ -515,18 +528,26 @@
 					
 					var colnum = 0;
 					for(var j = Number(setting.startcol); j < SelectDia.length; j++){
+			
 						if(SelectDia[j].Time[i] === undefined || SelectDia[j].Time[i].Stop === "0" || (SelectDia[j].Time[i].Stop === "1" && SelectDia[j].Time[i].Departure === "" && SelectDia[j].Time[Number(i) + 1] == null)){
 							var TimeCol = setting.noservicemark;
+						}else if((SelectDia[j].Time[i].Stop === "1" || SelectDia[j].Time[i].Stop === "2") && (SelectDia[j].Time[i].Departure === null || SelectDia[j].Time[i].Departure === "") && (SelectDia[j].Time[Number(i) + 1] !== undefined && SelectDia[j].Time[Number(i) + 1].Stop === "3")){
+							var TimeCol = setting.noviamark;
 						}else if(SelectDia[j].Time[i].Stop === "2"){
 							var TimeCol = setting.passmark;
-						}else if(SelectDia[j].Time[i].Stop === "3" || (SelectDia[j].Time[i].Stop === "1" && SelectDia[j].Time[i].Departure === "" && SelectDia[j].Time[Number(i) + 1].Stop === "3")){
+						}else if(SelectDia[j].Time[i].Stop === "3"){
 							var TimeCol = setting.noviamark;
 						}else{
 							var TimeCol = eval("SelectDia[j].Time[i]." + DepArr);
 						}
-						//3桁時は時刻の前に半角空白
+						//桁数によって表示を切り替え
 						if(TimeCol.length === 3){
 							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.length === 5){
+							TimeCol = TimeCol.slice(0, 3);
+							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.slice(0, 1) !== "&" && TimeCol.length === 6){
+							TimeCol = TimeCol.slice(0, 4);
 						}
 						td.push("<td class=\"" + CSS_Class_TimeCol + "wdv-AllRoute-Depcol\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
 					
@@ -575,9 +596,14 @@
 							var TimeCol = eval("SelectDia[j].Time[i]." + DepArr);
 						}
 
-						//3桁時は時刻の前に半角空白
+						//桁数によって表示を切り替え
 						if(TimeCol.length === 3){
 							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.length === 5){
+							TimeCol = TimeCol.slice(0, 3);
+							TimeCol = "　" + TimeCol;
+						}else if(TimeCol.slice(0, 1) !== "&" && TimeCol.length === 6){
+							TimeCol = TimeCol.slice(0, 4);
 						}
 						td.push("<td class=\"" + CSS_Class_TimeCol + "\" style=\"color:" + data.ClassConfig[SelectDia[j].Class].TextColor + ";\">" + TimeCol + "</td>\n");
 					
